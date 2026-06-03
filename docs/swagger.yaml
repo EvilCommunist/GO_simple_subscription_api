@@ -207,6 +207,55 @@ paths:
       summary: Обновить подписку
       tags:
       - subscriptions
+  /subscriptions/totalcost:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает стоимость подписок пользователя за указанный период.
+        Фильтрация по названию сервиса – опциональна.
+      parameters:
+      - description: Начало просматриваемого периода (MM-YYYY)
+        in: query
+        name: start_date
+        required: true
+        type: string
+      - description: Конец просматриваемого периода (MM-YYYY)
+        in: query
+        name: end_date
+        required: true
+        type: string
+      - description: UUID пользователя
+        in: query
+        name: user_id
+        required: true
+        type: string
+      - description: Название сервиса
+        in: query
+        name: service_name
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: total_amount
+          schema:
+            additionalProperties:
+              format: int64
+              type: integer
+            type: object
+        "400":
+          description: Не указан user_id или неверный формат
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Получить стоимость всех подписок за этот период
+      tags:
+      - subscriptions totalcost
 schemes:
 - http
 swagger: "2.0"

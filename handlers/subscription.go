@@ -311,6 +311,92 @@ func (sh *SubscriptionsHandler) List(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(subs)
 }
 
+// @Summary      Получить стоимость всех подписок за этот период
+// @Description  Возвращает стоимость подписок пользователя за указанный период. Фильтрация по названию сервиса – опциональна.
+// @Tags         subscriptions totalcost
+// @Accept       json
+// @Produce      json
+// @Param        start_date    query     string  true  "Начало просматриваемого периода (MM-YYYY)"
+// @Param        end_date      query     string  true  "Конец просматриваемого периода (MM-YYYY)"
+// @Param        user_id       query     string  true  "UUID пользователя"
+// @Param        service_name  query     string  false "Название сервиса"
+// @Success      200           {object}  map[string]int64       "total_amount"
+// @Failure      400           {object}  map[string]interface{} "Не указан user_id или неверный формат"
+// @Failure      500           {object}  map[string]interface{} "Внутренняя ошибка"
+// @Router       /subscriptions/totalcost [get]
 func (sh *SubscriptionsHandler) TotalCost(w http.ResponseWriter, r *http.Request) {
-	// TODO
+	startDateStr := r.URL.Query().Get("start_date")
+	if startDateStr == "" {
+		slog.Error("Empty start date acquired")
+		http.Error(w, "Invalid start date", http.StatusBadRequest)
+		return
+	}
+	endDateStr := r.URL.Query().Get("end_date")
+	if endDateStr == "" {
+		slog.Error("Empty end date acquired")
+		http.Error(w, "Invalid end date", http.StatusBadRequest)
+		return
+	}
+
+	startDate, err := time.Parse("01-2006", startDateStr)
+	if err != nil {
+		slog.Error("Start date could not be parsed", "error", err)
+		http.Error(w, "Invalid start date acquired", http.StatusBadRequest)
+		return
+	}
+	endDate, err := time.Parse("01-2006", endDateStr)
+	if err != nil {
+		slog.Error("End date could not be parsed", "error", err)
+		http.Error(w, "Invalid end date acquired", http.StatusBadRequest)
+		return
+	}
+
+	uuidStr := r.URL.Query().Get("user_id")
+	if uuidStr == "" {
+		slog.Error("Empty UUID acquired")
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+	uuid, err := uuid.Parse(uuidStr)
+	if err != nil {
+		slog.Error("Invalid UUID acquired", "error", err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+	var serviceName *string
+	service := r.URL.Query().Get("service_name")
+	if service != "" {
+		serviceName = &service
+	}
+
+	subs, err := sh.conn.List(r.Context(), uuid, serviceName)
+
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), "Service name cannot be empty"):
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		case strings.Contains(err.Error(), "Query refused") ||
+			strings.Contains(err.Error(), "Scan dropped with errors") ||
+			strings.Contains(err.Error(), "Error of subscriptions iteration"):
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		default:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		}
+		return
+	}
+
+	var totalAmount int64 = 0
+	for _, sub := range subs {
+		if sub.StartDate.After(endDate) {
+			continue
+		}
+		if sub.EndDate != nil && sub.EndDate.Before(startDate) {
+			continue
+		}
+		totalAmount += int64(sub.Price)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]int64{"total_amount": totalAmount})
 }
