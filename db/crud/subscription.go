@@ -70,6 +70,7 @@ func (sdb *SubscriptionDB) Update(sub models.SubscriptionUpdate, ctx context.Con
 	}
 
 	if len(parameters) == 0 {
+		slog.Error("No parameters passed to update")
 		return nil, fmt.Errorf("No parameters were passed to update")
 	}
 
