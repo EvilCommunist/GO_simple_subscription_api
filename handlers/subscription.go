@@ -106,6 +106,8 @@ func (sh *SubscriptionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case strings.Contains(err.Error(), "ID cannot be negative"):
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		case strings.Contains(err.Error(), "no rows in result set"):
+			http.Error(w, "Subscription not found", http.StatusNotFound)
 		case strings.Contains(err.Error(), "Query refused"):
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		default:
@@ -177,6 +179,8 @@ func (sh *SubscriptionsHandler) Patch(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case strings.Contains(err.Error(), "No parameters"):
 			http.Error(w, err.Error(), http.StatusBadRequest)
+		case strings.Contains(err.Error(), "no rows in result set"):
+			http.Error(w, "Subscription not found", http.StatusNotFound)
 		case strings.Contains(err.Error(), "Query refused"):
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		default:
@@ -202,7 +206,7 @@ func (sh *SubscriptionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case strings.Contains(err.Error(), "Nothing was deleted"):
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StatusNotFound)
 		case strings.Contains(err.Error(), "Query refused"):
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		default:
@@ -214,7 +218,7 @@ func (sh *SubscriptionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (sh *SubscriptionsHandler) List(w http.ResponseWriter, r *http.Request) {
-	uuidStr := r.URL.Query().Get("uuid")
+	uuidStr := r.URL.Query().Get("user_id")
 	if uuidStr == "" {
 		slog.Error("Empty UUID acquired")
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
@@ -227,7 +231,7 @@ func (sh *SubscriptionsHandler) List(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var serviceName *string
-	service := r.URL.Query().Get("service")
+	service := r.URL.Query().Get("service_name")
 	if service != "" {
 		serviceName = &service
 	}
