@@ -22,6 +22,16 @@ func (sh *SubscriptionsHandler) SetDatabaseHandler(conn *crud.SubscriptionDB) {
 	sh.conn = conn
 }
 
+// @Summary      Создать новую подписку
+// @Description  Создаёт запись о подписке. Даты передаются в формате MM-YYYY.
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        request body object true "Данные подписки" example({"service_name":"Yandex Plus","price":400,"user_id":"60601fee-2bf1-4721-ae6f-7636e79a0cba","start_date":"07-2025","end_date":"12-2025"})
+// @Success      201  {object}  models.Subscription
+// @Failure      400  {object}  map[string]interface{} "Ошибка валидации"
+// @Failure      500  {object}  map[string]interface{} "Внутренняя ошибка"
+// @Router       /subscriptions [post]
 func (sh *SubscriptionsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	var request struct {
 		ServiceName string  `json:"service_name"`
@@ -93,6 +103,17 @@ func (sh *SubscriptionsHandler) Post(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(created)
 }
 
+// @Summary      Получить подписку по ID
+// @Description  Возвращает полную информацию о подписке.
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID подписки"
+// @Success      200  {object}  models.Subscription
+// @Failure      400  {object}  map[string]interface{} "Неверный ID"
+// @Failure      404  {object}  map[string]interface{} "Подписка не найдена"
+// @Failure      500  {object}  map[string]interface{} "Ошибка сервера"
+// @Router       /subscriptions/{id} [get]
 func (sh *SubscriptionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil || id <= 0 {
@@ -120,6 +141,18 @@ func (sh *SubscriptionsHandler) Get(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(sub)
 }
 
+// @Summary      Обновить подписку
+// @Description  Обновляет одно или несколько полей (price, start_date, end_date).
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        id      path      int     true  "ID подписки"
+// @Param        request body      object  true  "Поля для обновления" example({"price":450})
+// @Success      200     {object}  models.Subscription
+// @Failure      400     {object}  map[string]interface{} "Ошибка валидации"
+// @Failure      404     {object}  map[string]interface{} "Подписка не найдена"
+// @Failure      500     {object}  map[string]interface{} "Внутренняя ошибка"
+// @Router       /subscriptions/{id} [patch]
 func (sh *SubscriptionsHandler) Patch(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil || id <= 0 {
@@ -194,6 +227,17 @@ func (sh *SubscriptionsHandler) Patch(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(updatedSub)
 }
 
+// @Summary      Удалить подписку
+// @Description  Удаляет подписку по ID.
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        id   path      int  true  "ID подписки"
+// @Success      204  "No Content"
+// @Failure      400  {object}  map[string]interface{} "Неверный ID"
+// @Failure      404  {object}  map[string]interface{} "Подписка не найдена"
+// @Failure      500  {object}  map[string]interface{} "Внутренняя ошибка"
+// @Router       /subscriptions/{id} [delete]
 func (sh *SubscriptionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil || id <= 0 {
@@ -217,6 +261,17 @@ func (sh *SubscriptionsHandler) Delete(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// @Summary      Получить список подписок
+// @Description  Возвращает список подписок пользователя. Фильтрация по названию сервиса – опциональна.
+// @Tags         subscriptions
+// @Accept       json
+// @Produce      json
+// @Param        user_id       query     string  true  "UUID пользователя"
+// @Param        service_name  query     string  false "Название сервиса"
+// @Success      200           {array}   models.Subscription
+// @Failure      400           {object}  map[string]interface{} "Не указан user_id или неверный формат"
+// @Failure      500           {object}  map[string]interface{} "Внутренняя ошибка"
+// @Router       /subscriptions [get]
 func (sh *SubscriptionsHandler) List(w http.ResponseWriter, r *http.Request) {
 	uuidStr := r.URL.Query().Get("user_id")
 	if uuidStr == "" {

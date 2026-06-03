@@ -1,5 +1,20 @@
 package main
 
+// @title           Subscriptions API
+// @version         1.0
+// @description     REST сервис для управления подписками пользователей.
+
+// @contact.name   Алексей
+// @contact.url    https://github.com/EvilCommunist
+
+// @license.name   Apache 2.0
+// @license.url    http://www.apache.org/licenses/LICENSE-2.0.html
+
+// @host      localhost:8090
+// @BasePath  /
+
+// @schemes   http
+
 import (
 	"log/slog"
 	"net/http"
@@ -9,6 +24,10 @@ import (
 	"CRUDL/db"
 	"CRUDL/db/crud"
 	"CRUDL/handlers"
+
+	httpSwagger "github.com/swaggo/http-swagger"
+
+	_ "CRUDL/docs"
 )
 
 const (
@@ -23,6 +42,7 @@ func main() {
 		slog.Error("Unable to connect to database", "error", err)
 		return
 	}
+	router.Get("/swagger/*", httpSwagger.WrapHandler)
 
 	subDBHandler := &crud.SubscriptionDB{}
 	subDBHandler.SetDatabase(conn)
