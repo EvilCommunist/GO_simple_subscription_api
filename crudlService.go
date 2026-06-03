@@ -54,6 +54,7 @@ func main() {
 	router.Patch(subscriptions+id, subHandler.Patch)
 	router.Delete(subscriptions+id, subHandler.Delete)
 	router.Get(subscriptions, subHandler.List)
+	router.Get(subscriptions+"/totalCost", subHandler.TotalCost)
 
 	http.ListenAndServe(":8090", router)
 }

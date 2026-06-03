@@ -310,3 +310,7 @@ func (sh *SubscriptionsHandler) List(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(subs)
 }
+
+func (sh *SubscriptionsHandler) TotalCost(w http.ResponseWriter, r *http.Request) {
+	// TODO
+}
